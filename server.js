@@ -12,10 +12,8 @@ dotenv.config();
 
 const app = express();
 
-// Enable proxy trust for Render reverse proxy
 app.set("trust proxy", 1);
 
-// Combine default local development origins with configured environment origins
 const defaultOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -31,7 +29,6 @@ const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like Postman, curl, or mobile clients)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
@@ -49,11 +46,9 @@ app.use(
 
 app.use(express.json());
 
-// API Routes
 app.use("/api/cloudinary", cloudinaryRoutes);
 app.use("/api/admins", adminRoutes);
 
-// Protected Cron Endpoints
 app.post("/api/admin/run-purge", verifyCronSecret, async (req, res) => {
   try {
     const result = await runPurgeTrashTask();
@@ -72,7 +67,6 @@ app.post("/api/admin/run-audit-purge", verifyCronSecret, async (req, res) => {
   }
 });
 
-// Root Health Check Route
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "online",
@@ -81,7 +75,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// Catch-all 404 Route for Unmatched API Endpoints
 app.use("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -89,7 +82,6 @@ app.use("/api/*", (req, res) => {
   });
 });
 
-// Initialize Scheduled Jobs
 initPurgeTrashJob();
 initAuditCleanupJob();
 
@@ -97,4 +89,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
 });
-               
+         
