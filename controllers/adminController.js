@@ -41,7 +41,9 @@ class AdminController {
         uid: userRecord.uid,
       });
     } catch (error) {
+      const sendgridDetail = error?.response?.body?.errors?.[0]?.message;
       console.error("Create Admin Error:", error?.response?.body || error?.message || error);
+
       if (error.code === "auth/email-already-exists") {
         return res.status(400).json({
           success: false,
@@ -50,7 +52,7 @@ class AdminController {
       }
       return res.status(500).json({
         success: false,
-        message: error.message || "Failed to create administrator.",
+        message: sendgridDetail || error.message || "Failed to create administrator.",
       });
     }
   }
@@ -162,10 +164,14 @@ class AdminController {
         message: "Password reset instructions have been sent to your email inbox.",
       });
     } catch (error) {
-      console.error("Forgot Password Error:", error?.response?.body || error?.message || error);
+      const sendgridDetail = error?.response?.body?.errors?.[0]?.message;
+      const finalErrorMessage = sendgridDetail || error?.message || "Unable to send reset link. Please try again later.";
+
+      console.error("Forgot Password Error:", error?.response?.body || error);
+
       return res.status(500).json({
         success: false,
-        message: "Unable to send reset link. Please try again later.",
+        message: finalErrorMessage,
       });
     }
   }
@@ -191,10 +197,12 @@ class AdminController {
         message: "Password change alert notification dispatched successfully.",
       });
     } catch (error) {
+      const sendgridDetail = error?.response?.body?.errors?.[0]?.message;
       console.error("Notify Password Change Error:", error?.response?.body || error?.message || error);
+
       return res.status(500).json({
         success: false,
-        message: "Internal server error while dispatching security alert.",
+        message: sendgridDetail || "Internal server error while dispatching security alert.",
       });
     }
   }
@@ -235,4 +243,4 @@ class AdminController {
 }
 
 export default new AdminController();
-          
+        
