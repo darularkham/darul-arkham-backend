@@ -31,7 +31,7 @@ class EmailService {
     const baseUrl = process.env.CLIENT_URL;
 
     if (!baseUrl) {
-      console.warn("⚠️ CLIENT_URL is not configured in environment variables. Falling back to localhost.");
+      console.warn("⚠️ CLIENT_URL is not set in environment variables. Falling back to default URL.");
       return "http://localhost:5174";
     }
 
@@ -284,4 +284,3 @@ class EmailService {
 }
 
 export default new EmailService();
-        
