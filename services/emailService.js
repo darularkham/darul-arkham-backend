@@ -16,7 +16,7 @@ class EmailService {
 
     if (!email) {
       throw new Error(
-        "SENDGRID_VERIFIED_SENDER or EMAIL_USER must be configured."
+        "SENDGRID_VERIFIED_SENDER or EMAIL_USER must be configured in environment variables."
       );
     }
 
@@ -28,14 +28,16 @@ class EmailService {
   }
 
   getClientUrl() {
-    const baseUrl = process.env.CLIENT_URL;
+    const rawUrl = process.env.CLIENT_URL;
 
-    if (!baseUrl) {
+    if (!rawUrl) {
       console.warn("⚠️ CLIENT_URL is not set in environment variables. Falling back to default URL.");
-      return "http://localhost:5174";
+      return "http://localhost:5173";
     }
 
-    return baseUrl.replace(/\/+$/, "");
+    // Handles cases where multiple comma-separated URLs are set in environment variables
+    const primaryUrl = rawUrl.split(",")[0].trim();
+    return primaryUrl.replace(/\/+$/, "");
   }
 
   getRecoveryUrl(path = "/reset-password") {
@@ -64,7 +66,8 @@ class EmailService {
       if (apiKey) params.set("apiKey", apiKey);
 
       return `${appUrl}?${params.toString()}`;
-    } catch {
+    } catch (err) {
+      console.warn("Could not reformat Firebase link, returning raw URL:", err.message);
       return firebaseGeneratedLink;
     }
   }
@@ -284,3 +287,4 @@ class EmailService {
 }
 
 export default new EmailService();
+        
