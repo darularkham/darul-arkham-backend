@@ -12,9 +12,16 @@ dotenv.config();
 
 const app = express();
 
+// Enable proxy trust for Render reverse proxy
 app.set("trust proxy", 1);
 
-const defaultOrigins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"];
+// Combine default local development origins with configured environment origins
+const defaultOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+];
+
 const envOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : [];
@@ -24,10 +31,14 @@ const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow requests with no origin (like Postman, curl, or mobile clients)
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
         return callback(null, true);
       }
+
+      console.error(`❌ Blocked by CORS Policy: ${origin}`);
       return callback(new Error("CORS Policy Violation: Access denied."));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -38,7 +49,7 @@ app.use(
 
 app.use(express.json());
 
-// API Endpoints
+// API Routes
 app.use("/api/cloudinary", cloudinaryRoutes);
 app.use("/api/admins", adminRoutes);
 
@@ -61,7 +72,7 @@ app.post("/api/admin/run-audit-purge", verifyCronSecret, async (req, res) => {
   }
 });
 
-// Root Route
+// Root Health Check Route
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "online",
@@ -70,14 +81,15 @@ app.get("/", (req, res) => {
   });
 });
 
-// 404 Route
+// Catch-all 404 Route for Unmatched API Endpoints
 app.use("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.originalUrl} not found.`,
+    message: `Route ${req.originalUrl} not found on server.`,
   });
 });
 
+// Initialize Scheduled Jobs
 initPurgeTrashJob();
 initAuditCleanupJob();
 
@@ -85,4 +97,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
 });
-  
+               
