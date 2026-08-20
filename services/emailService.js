@@ -31,9 +31,7 @@ class EmailService {
     const baseUrl = process.env.CLIENT_URL;
 
     if (!baseUrl) {
-      if (process.env.NODE_ENV === "production") {
-        throw new Error("CLIENT_URL must be configured in production.");
-      }
+      console.warn("⚠️ CLIENT_URL is not configured in environment variables. Falling back to localhost.");
       return "http://localhost:5174";
     }
 
@@ -286,3 +284,4 @@ class EmailService {
 }
 
 export default new EmailService();
+        
