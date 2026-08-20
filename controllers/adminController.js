@@ -41,7 +41,7 @@ class AdminController {
         uid: userRecord.uid,
       });
     } catch (error) {
-      console.error("Create Admin Error:", error);
+      console.error("Create Admin Error:", error?.response?.body || error?.message || error);
       if (error.code === "auth/email-already-exists") {
         return res.status(400).json({
           success: false,
@@ -87,7 +87,7 @@ class AdminController {
         message: "Administrator updated successfully.",
       });
     } catch (error) {
-      console.error("Update Admin Error:", error);
+      console.error("Update Admin Error:", error?.response?.body || error?.message || error);
       if (error.code === "auth/email-already-exists") {
         return res.status(400).json({
           success: false,
@@ -149,7 +149,16 @@ class AdminController {
         message: "Password reset instructions have been sent to your email inbox.",
       });
     } catch (error) {
-      console.error("Forgot Password Error:", error);
+      console.error("Forgot Password Error:", error?.response?.body || error?.message || error);
+      
+      const errorMessage = error?.message || "";
+      if (errorMessage.includes("SENDGRID_API_KEY") || errorMessage.includes("SENDGRID_VERIFIED_SENDER")) {
+        return res.status(500).json({
+          success: false,
+          message: "Email service configuration error. Please inform server administrator.",
+        });
+      }
+
       return res.status(500).json({
         success: false,
         message: "Internal server error while processing password reset request.",
@@ -178,7 +187,7 @@ class AdminController {
         message: "Password change alert notification dispatched successfully.",
       });
     } catch (error) {
-      console.error("Notify Password Change Error:", error);
+      console.error("Notify Password Change Error:", error?.response?.body || error?.message || error);
       return res.status(500).json({
         success: false,
         message: "Internal server error while dispatching security alert.",
@@ -212,7 +221,7 @@ class AdminController {
         message: "Administrator deleted permanently.",
       });
     } catch (error) {
-      console.error("Delete Admin Error:", error);
+      console.error("Delete Admin Error:", error?.response?.body || error?.message || error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to delete administrator.",
@@ -222,3 +231,4 @@ class AdminController {
 }
 
 export default new AdminController();
+        
