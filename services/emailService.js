@@ -25,7 +25,7 @@ class EmailService {
     const rawUrl = process.env.CLIENT_URL;
 
     if (!rawUrl) {
-      return "http://localhost:5173";
+      throw new Error("CLIENT_URL environment variable is not defined.");
     }
 
     const primaryUrl = rawUrl.split(",")[0].trim();
@@ -104,9 +104,7 @@ class EmailService {
 
   async sendAdminInvitation(email, name, role) {
     const appName = this.getAppName();
-    const supportEmail = this.getSupportEmail();
     const safeName = this.escapeHtml(name || "Administrator");
-    const safeRole = this.escapeHtml(role?.toUpperCase() || "ADMIN");
 
     const actionCodeSettings = this.getActionCodeSettings("/reset-password");
     const firebaseLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
@@ -121,7 +119,6 @@ class EmailService {
 
   async sendForgotPasswordLink(email) {
     const appName = this.getAppName();
-    const supportEmail = this.getSupportEmail();
 
     const actionCodeSettings = this.getActionCodeSettings("/reset-password");
     const firebaseLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
@@ -147,3 +144,4 @@ class EmailService {
 }
 
 export default new EmailService();
+      
