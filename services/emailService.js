@@ -1,16 +1,10 @@
-import sgMail from "@sendgrid/mail";
+import sgMail from "../config/mail.js";
 import { admin } from "../config/firebase.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 class EmailService {
-  constructor() {
-    if (process.env.SENDGRID_API_KEY) {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    }
-  }
-
   getRecoveryUrl(path = "/reset-password") {
     const baseUrl = process.env.CLIENT_URL || "http://localhost:5174";
     const cleanBase = baseUrl.replace(/\/+$|\s+/g, "");
@@ -41,22 +35,27 @@ class EmailService {
   }
 
   getSenderEmail() {
-    return process.env.EMAIL_USER || "your-verified-single-sender@gmail.com";
+    return process.env.EMAIL_USER;
   }
 
   async sendAdminInvitation(email, name, role) {
     try {
+      const senderEmail = this.getSenderEmail();
+      if (!senderEmail) {
+        throw new Error("EMAIL_USER environment variable is missing.");
+      }
+
       const actionCodeSettings = this.getActionCodeSettings("/reset-password");
       const rawLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
       const passwordSetupLink = this.formatDirectAppUrl(rawLink, "/reset-password");
 
-      const supportEmail = process.env.SUPPORT_EMAIL || this.getSenderEmail();
+      const supportEmail = process.env.SUPPORT_EMAIL || senderEmail;
       const appName = process.env.APP_NAME || "Darul Arkham";
 
       const msg = {
         to: email,
         from: {
-          email: this.getSenderEmail(),
+          email: senderEmail,
           name: appName,
         },
         replyTo: supportEmail,
@@ -89,17 +88,22 @@ class EmailService {
 
   async sendForgotPasswordLink(email) {
     try {
+      const senderEmail = this.getSenderEmail();
+      if (!senderEmail) {
+        throw new Error("EMAIL_USER environment variable is missing.");
+      }
+
       const actionCodeSettings = this.getActionCodeSettings("/reset-password");
       const rawLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
       const passwordResetLink = this.formatDirectAppUrl(rawLink, "/reset-password");
 
-      const supportEmail = process.env.SUPPORT_EMAIL || this.getSenderEmail();
+      const supportEmail = process.env.SUPPORT_EMAIL || senderEmail;
       const appName = process.env.APP_NAME || "Darul Arkham";
 
       const msg = {
         to: email,
         from: {
-          email: this.getSenderEmail(),
+          email: senderEmail,
           name: appName,
         },
         replyTo: supportEmail,
@@ -130,14 +134,19 @@ class EmailService {
 
   async sendPasswordChangeNotification(email, name = "Administrator") {
     try {
-      const supportEmail = process.env.SUPPORT_EMAIL || this.getSenderEmail();
+      const senderEmail = this.getSenderEmail();
+      if (!senderEmail) {
+        throw new Error("EMAIL_USER environment variable is missing.");
+      }
+
+      const supportEmail = process.env.SUPPORT_EMAIL || senderEmail;
       const appName = process.env.APP_NAME || "Darul Arkham";
       const recoveryUrl = this.getRecoveryUrl("/forgot-password");
 
       const msg = {
         to: email,
         from: {
-          email: this.getSenderEmail(),
+          email: senderEmail,
           name: appName,
         },
         replyTo: supportEmail,
@@ -170,3 +179,4 @@ class EmailService {
 }
 
 export default new EmailService();
+              
