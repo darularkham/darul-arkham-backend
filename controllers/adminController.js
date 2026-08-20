@@ -132,14 +132,27 @@ class AdminController {
         .limit(1)
         .get();
 
-      if (!adminSnapshot.empty) {
-        const adminData = adminSnapshot.docs[0].data();
-        if (adminData.status === "disabled" || adminData.status === "suspended") {
-          return res.status(403).json({
-            success: false,
-            message: `Cannot reset password. Account is currently ${adminData.status}.`,
-          });
-        }
+      if (adminSnapshot.empty) {
+        return res.status(404).json({
+          success: false,
+          message: "No active administrator record found for this email address.",
+        });
+      }
+
+      const adminData = adminSnapshot.docs[0].data();
+
+      if (adminData.status === "suspended") {
+        return res.status(403).json({
+          success: false,
+          message: "Account suspended. Password reset is not permitted for suspended accounts.",
+        });
+      }
+
+      if (adminData.status === "disabled" || adminData.status === "removed") {
+        return res.status(403).json({
+          success: false,
+          message: "This administrator account is no longer active.",
+        });
       }
 
       await emailService.sendForgotPasswordLink(cleanEmail);
@@ -222,4 +235,4 @@ class AdminController {
 }
 
 export default new AdminController();
-      
+          
