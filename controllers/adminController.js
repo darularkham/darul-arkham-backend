@@ -150,18 +150,9 @@ class AdminController {
       });
     } catch (error) {
       console.error("Forgot Password Error:", error?.response?.body || error?.message || error);
-      
-      const errorMessage = error?.message || "";
-      if (errorMessage.includes("SENDGRID_API_KEY") || errorMessage.includes("SENDGRID_VERIFIED_SENDER")) {
-        return res.status(500).json({
-          success: false,
-          message: "Email service configuration error. Please inform server administrator.",
-        });
-      }
-
       return res.status(500).json({
         success: false,
-        message: "Internal server error while processing password reset request.",
+        message: "Unable to send reset link. Please try again later.",
       });
     }
   }
@@ -231,4 +222,4 @@ class AdminController {
 }
 
 export default new AdminController();
-        
+    
