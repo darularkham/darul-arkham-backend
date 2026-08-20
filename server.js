@@ -14,21 +14,26 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:5174", "http://localhost:3000"];
+// Standardize allowed origins by stripping trailing slashes
+const rawOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5174", "http://localhost:5173", "http://localhost:3000"];
+
+const allowedOrigins = rawOrigins.map((o) => o.trim().replace(/\/+$/, ""));
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+      const cleanOrigin = origin.replace(/\/+$/, "");
+      if (allowedOrigins.includes(cleanOrigin) || process.env.NODE_ENV !== "production") {
         return callback(null, true);
       }
-      return callback(new Error("CORS Policy Violation: Access denied."));
+      return callback(new Error(`CORS Policy Violation: Origin ${origin} not allowed.`));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-cron-secret"],
+    credentials: true,
   })
 );
 
@@ -66,7 +71,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// 404 Route
+// 404 Route Handler
 app.use("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -74,6 +79,7 @@ app.use("/api/*", (req, res) => {
   });
 });
 
+// Initialize Scheduled Jobs
 initPurgeTrashJob();
 initAuditCleanupJob();
 
@@ -81,3 +87,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
 });
+  
